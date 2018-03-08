@@ -3,10 +3,15 @@ from main import db
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    Public_id = db.Column(db.String(50), unique=True)
+    public_id = db.Column(db.String(50), unique=True)
     name = db.Column(db.String(50))
     password = db.Column(db.String(80))
     admin = db.Column(db.Boolean)
+
+
+# class Server(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     statusvalue = db.Column(db.Integer)
 
 
 # ***for create database follow the instruction
