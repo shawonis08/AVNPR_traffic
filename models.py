@@ -7,3 +7,9 @@ class User(db.Model):
     name = db.Column(db.String(50))
     password = db.Column(db.String(80))
     admin = db.Column(db.Boolean)
+
+
+# ***for create database follow the instruction
+# from main import db
+from models import *
+# db.create_all()
