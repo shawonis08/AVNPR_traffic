@@ -22,7 +22,7 @@ def token_required(f):
         except:
             return jsonify({'message': 'Token is missing!'}), 401
         return f(current_user, *args, **kwargs)
-    return decorated()
+    return decorated
 
 
 @app.route('/')
