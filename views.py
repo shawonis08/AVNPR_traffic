@@ -123,16 +123,16 @@ def token():
         return make_response('could not verify', 401, {'Authenticate': 'Login required!'})
     if check_password_hash(user.password, auth.password):
         # token = jwt.encode({'public_id': user.id, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)},app.config['SECRET_KEY'])
-        token = jwt.encode({'name': user.name,'id':user.id}, app.config['SECRET_KEY'])
+        token = jwt.encode({'public_id': user.id}, app.config['SECRET_KEY'])
         return jsonify({'token': token.decode('UTF-8')})
     return make_response('could not verify', 401, {'Authenticate': 'Login required!'})
 
 
-#not complete this method
 @app.route('/form', methods=['GET', 'POST'])
 def form():
     form = LoginForm()
 
     if form.validate_on_submit():
+        print(form.username.data)
         return '<h1>The username is {}. The password is {}.'.format(form.username.data, form.password.data)
-    return render_template('form.html', form=form)
+    return render_template('login.html', form=form)
