@@ -22,8 +22,9 @@ def token_required(f):
 
         try:
             data = jwt.decode(token, app.config['SECRET_KEY'])
-            current_user = User.query.filter_by(public_id = data['public_id']).first()
-            print(jsonify({"test":current_user}))
+            current_user = token
+            # current_user = User.query.filter_by(public_id = data['public_id']).first()
+
         except:
             return jsonify({'message': 'Token is invalid!'}), 401
 
@@ -78,7 +79,7 @@ def create_user():
 
     data = request.get_json()
     hash_password = generate_password_hash(data['password'], method='sha256')
-    new_user = User(public_id=str(uuid.uuid4()), name=data['name'], password=hash_password, admin=False)
+    new_user = User(public_id=str(uuid.uuid4()), name=data['name'], password=hash_password, admin=False, key='None')
     db.session.add(new_user)
     db.session.commit()
     return jsonify({'message': 'new user create'})
@@ -86,7 +87,7 @@ def create_user():
 
 @app.route('/user/<public_id>', methods=['PUT'])
 @token_required
-def promote_user(current_user,public_id):
+def promote_user(public_id):
     # if not current_user.admin:
     #     return jsonify({'message': 'Cannot perform that function'})
 
@@ -113,7 +114,7 @@ def delete_user(current_user,public_id):
 
 
 @app.route('/token')
-def token():
+def gen_token():
     auth = request.authorization
     if not auth or not auth.username or not auth.password:
         return make_response('could not verify', 401, {'Authenticate': 'Login required!'})
@@ -123,16 +124,31 @@ def token():
         return make_response('could not verify', 401, {'Authenticate': 'Login required!'})
     if check_password_hash(user.password, auth.password):
         # token = jwt.encode({'public_id': user.id, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)},app.config['SECRET_KEY'])
-        token = jwt.encode({'public_id': user.id}, app.config['SECRET_KEY'])
+        token = jwt.encode({'name': user.name,'id':user.id}, app.config['SECRET_KEY'])
+        user.key = token.decode('UTF-8')
+        db.session.commit()
         return jsonify({'token': token.decode('UTF-8')})
     return make_response('could not verify', 401, {'Authenticate': 'Login required!'})
 
 
+#not complete this method
 @app.route('/form', methods=['GET', 'POST'])
 def form():
     form = LoginForm()
 
     if form.validate_on_submit():
-        print(form.username.data)
         return '<h1>The username is {}. The password is {}.'.format(form.username.data, form.password.data)
     return render_template('login.html', form=form)
+
+
+@app.route('/token/t')
+@token_required
+def token(current_user):
+    user = User.query.filter_by(key=current_user).first()
+
+    if not user:
+        return jsonify({'message': 'no user found!'})
+
+    user_data = {'public_id': user.public_id, 'name': user.name, 'password': user.password, 'admin': user.admin}
+
+    return jsonify({'user': user_data})

@@ -8,6 +8,7 @@ class User(db.Model):
     name = db.Column(db.String(50))
     password = db.Column(db.String(80))
     admin = db.Column(db.Boolean)
+    key = db.Column(db.String(300))
 
 
 
