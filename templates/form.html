@@ -5,11 +5,12 @@
 <body>
 <h1>Our form will be here!</h1>
 <form method="POST" action="{{ url_for('form') }}">
+    {{ form.csrf_token }}
     {{ form.username.label }}
     {{ form.username }}
     {{ form.password.label }}
     {{ form.password }}
-    <button type="submit">Submit</button>
+    <input type="submit" value="Submit">
 </form>
 </body>
 </html>
