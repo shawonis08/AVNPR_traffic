@@ -6,22 +6,29 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 import datetime
 from functools import wraps
+from forms import LoginForm
 
 
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = None
+
         if 'x-access-token' in request.headers:
             token = request.headers['x-access-token']
+
         if not token:
-            return jsonify({'message': "Token is missing"}), 401
+            return jsonify({'message': 'Token is missing!'}), 401
+
         try:
             data = jwt.decode(token, app.config['SECRET_KEY'])
             current_user = User.query.filter_by(public_id = data['public_id']).first()
+            print(jsonify({"test":current_user}))
         except:
-            return jsonify({'message': 'Token is missing!'}), 401
+            return jsonify({'message': 'Token is invalid!'}), 401
+
         return f(current_user, *args, **kwargs)
+
     return decorated
 
 
@@ -30,28 +37,11 @@ def index():
     return '<h1>test</h1>'
 
 
-@app.route('/login')
-def login():
-    auth = request.authorization
-    if not auth or not auth.username or not auth.password:
-        return make_response('could not verify', 401, {'Authenticate': 'Login required!'})
-    # return render_template('login.html')
-    user = User.query.filter_by(name=auth.username).first()
-    if not user:
-        return make_response('could not verify', 401, {'Authenticate': 'Login required!'})
-    if check_password_hash(user.password, auth.password):
-        token = jwt.encode({'public_id': user.id, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)},
-                           app.config['SECRET_KEY'])
-        return jsonify({'token': token.decode('UTF-8')})
-    return make_response('could not verify', 401, {'Authenticate': 'Login required!'})
-
-
 @app.route('/user', methods=['GET'])
 @token_required
 def get_all_user(current_user):
-
-    if not current_user.admin:
-        return jsonify({'message': 'Cannot perform that function'})
+    # if not current_user.admin:
+    #     return jsonify({'message': 'Cannot perform that function!'})
 
     all_users = User.query.all()
     output = []
@@ -70,28 +60,21 @@ def get_all_user(current_user):
 @app.route('/user/<public_id>', methods=['GET'])
 @token_required
 def get_one_user(current_user,public_id):
-    if not current_user.admin:
-        return jsonify({'message': 'Cannot perform that function'})
-
     user = User.query.filter_by(public_id=public_id).first()
 
     if not user:
         return jsonify({'message': 'no user found!'})
 
-    user_data = {}
-    user_data['public_id'] = user.public_id
-    user_data['name'] = user.name
-    user_data['password'] = user.password
-    user_data['admin'] = user.admin
+    user_data = {'public_id': user.public_id, 'name': user.name, 'password': user.password, 'admin': user.admin}
 
     return jsonify({'user': user_data})
 
 
 @app.route('/user', methods=['POST'])
-@token_required
-def create_user(current_user):
-    if not current_user.admin:
-        return jsonify({'message': 'Cannot perform that function'})
+# @token_required
+def create_user():
+    # if not current_user.admin:
+    #     return jsonify({'message': 'Cannot perform that function'})
 
     data = request.get_json()
     hash_password = generate_password_hash(data['password'], method='sha256')
@@ -104,8 +87,8 @@ def create_user(current_user):
 @app.route('/user/<public_id>', methods=['PUT'])
 @token_required
 def promote_user(current_user,public_id):
-    if not current_user.admin:
-        return jsonify({'message': 'Cannot perform that function'})
+    # if not current_user.admin:
+    #     return jsonify({'message': 'Cannot perform that function'})
 
     user = User.query.filter_by(public_id=public_id).first()
     if not user:
@@ -117,9 +100,9 @@ def promote_user(current_user,public_id):
 
 @app.route('/user/<public_id>', methods=['DELETE'])
 @token_required
-def delete_user(public_id):
-    if not current_user.admin:
-        return jsonify({'message': 'Cannot perform that function'})
+def delete_user(current_user,public_id):
+    # if not current_user.admin:
+    #     return jsonify({'message': 'Cannot perform that function'})
 
     user = User.query.filter_by(public_id=public_id).first()
     if not user:
@@ -127,3 +110,29 @@ def delete_user(public_id):
     db.session.delete(user)
     db.session.commit()
     return jsonify({'message': 'user has been deleted'})
+
+
+@app.route('/token')
+def token():
+    auth = request.authorization
+    if not auth or not auth.username or not auth.password:
+        return make_response('could not verify', 401, {'Authenticate': 'Login required!'})
+    # return render_template('login.html')
+    user = User.query.filter_by(name=auth.username).first()
+    if not user:
+        return make_response('could not verify', 401, {'Authenticate': 'Login required!'})
+    if check_password_hash(user.password, auth.password):
+        # token = jwt.encode({'public_id': user.id, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)},app.config['SECRET_KEY'])
+        token = jwt.encode({'public_id': user.id}, app.config['SECRET_KEY'])
+        return jsonify({'token': token.decode('UTF-8')})
+    return make_response('could not verify', 401, {'Authenticate': 'Login required!'})
+
+
+@app.route('/form', methods=['GET', 'POST'])
+def form():
+    form = LoginForm()
+
+    if form.validate_on_submit():
+        print(form.username.data)
+        return '<h1>The username is {}. The password is {}.'.format(form.username.data, form.password.data)
+    return render_template('form.html', form=form)
