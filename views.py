@@ -9,6 +9,7 @@ from functools import wraps
 from forms import LoginForm
 
 
+# token required here
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -16,18 +17,14 @@ def token_required(f):
 
         if 'x-access-token' in request.headers:
             token = request.headers['x-access-token']
-
         if not token:
             return jsonify({'message': 'Token is missing!'}), 401
-
         try:
             data = jwt.decode(token, app.config['SECRET_KEY'])
             current_user = token
             # current_user = User.query.filter_by(public_id = data['public_id']).first()
-
         except:
             return jsonify({'message': 'Token is invalid!'}), 401
-
         return f(current_user, *args, **kwargs)
 
     return decorated
@@ -38,12 +35,15 @@ def index():
     return '<h1>test</h1>'
 
 
-@app.route('/user', methods=['GET'])
+# view all user data
+@app.route('/user/all', methods=['GET'])
 @token_required
 def get_all_user(current_user):
-    # if not current_user.admin:
-    #     return jsonify({'message': 'Cannot perform that function!'})
-
+    # start verifyuser admin or not
+    verifyuser = User.query.filter_by(key=current_user).first()
+    if not verifyuser.admin:
+        return jsonify({'message': 'Cannot perform that function!'})
+    # End verifyuser admin or not
     all_users = User.query.all()
     output = []
     for user in all_users:
@@ -58,9 +58,15 @@ def get_all_user(current_user):
     return jsonify({'all_users': output})
 
 
+# view specific user by user unique public_id
 @app.route('/user/<public_id>', methods=['GET'])
 @token_required
-def get_one_user(current_user,public_id):
+def get_one_user(current_user, public_id):
+    # start verifyuser admin or not
+    verifyuser = User.query.filter_by(key=current_user).first()
+    if not verifyuser.admin:
+        return jsonify({'message': 'Cannot perform that function!'})
+    # End verifyuser admin or not
     user = User.query.filter_by(public_id=public_id).first()
 
     if not user:
@@ -71,11 +77,15 @@ def get_one_user(current_user,public_id):
     return jsonify({'user': user_data})
 
 
-@app.route('/user', methods=['POST'])
+# create user by admin
+@app.route('/user/create', methods=['POST'])
 # @token_required
 def create_user():
-    # if not current_user.admin:
-    #     return jsonify({'message': 'Cannot perform that function'})
+    # start verifyuser admin or not
+    verifyuser = User.query.filter_by(key=current_user).first()
+    if not verifyuser.admin:
+        return jsonify({'message': 'Cannot perform that function!'})
+    # End verifyuser admin or not
 
     data = request.get_json()
     hash_password = generate_password_hash(data['password'], method='sha256')
@@ -85,11 +95,15 @@ def create_user():
     return jsonify({'message': 'new user create'})
 
 
-@app.route('/user/<public_id>', methods=['PUT'])
+# promote general user to admin by admin
+@app.route('/user/admin/<public_id>', methods=['PUT'])
 @token_required
-def promote_user(current_user,public_id):
-    # if not current_user.admin:
-    #     return jsonify({'message': 'Cannot perform that function'})
+def promote_user(current_user, public_id):
+    # start verifyuser admin or not
+    verifyuser = User.query.filter_by(key=current_user).first()
+    if not verifyuser.admin:
+        return jsonify({'message': 'Cannot perform that function!'})
+    # End verifyuser admin or not
 
     user = User.query.filter_by(public_id=public_id).first()
     if not user:
@@ -99,11 +113,15 @@ def promote_user(current_user,public_id):
     return jsonify({'message': 'user has been promoted'})
 
 
-@app.route('/user/<public_id>', methods=['DELETE'])
+# delete user by admin
+@app.route('/user/delete/<public_id>', methods=['DELETE'])
 @token_required
-def delete_user(current_user,public_id):
-    # if not current_user.admin:
-    #     return jsonify({'message': 'Cannot perform that function'})
+def delete_user(current_user, public_id):
+    # start verifyuser admin or not
+    verifyuser = User.query.filter_by(key=current_user).first()
+    if not verifyuser.admin:
+        return jsonify({'message': 'Cannot perform that function!'})
+    # End verifyuser admin or not
 
     user = User.query.filter_by(public_id=public_id).first()
     if not user:
@@ -113,7 +131,8 @@ def delete_user(current_user,public_id):
     return jsonify({'message': 'user has been deleted'})
 
 
-@app.route('/gettoken')
+# generate_token here for specific user
+@app.route('/user/token', methods=['GET'])
 def gen_token():
     auth = request.authorization
     if not auth or not auth.username or not auth.password:
@@ -124,24 +143,15 @@ def gen_token():
         return make_response('could not verify', 401, {'Authenticate': 'Login required!'})
     if check_password_hash(user.password, auth.password):
         # token = jwt.encode({'public_id': user.id, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)},app.config['SECRET_KEY'])
-        token = jwt.encode({'name': user.name,'id':user.id}, app.config['SECRET_KEY'])
+        token = jwt.encode({'name': user.name, 'id': user.id}, app.config['SECRET_KEY'])
         user.key = token.decode('UTF-8')
         db.session.commit()
         return jsonify({'token': token.decode('UTF-8')})
     return make_response('could not verify', 401, {'Authenticate': 'Login required!'})
 
 
-#not complete this method
-@app.route('/form', methods=['GET', 'POST'])
-def form():
-    form = LoginForm()
-
-    if form.validate_on_submit():
-        return '<h1>The username is {}. The password is {}.'.format(form.username.data, form.password.data)
-    return render_template('login.html', form=form)
-
-
-@app.route('/token/t')
+# through token generate user info
+@app.route('/user/token/verify')
 @token_required
 def token(current_user):
     user = User.query.filter_by(key=current_user).first()
@@ -152,3 +162,12 @@ def token(current_user):
     user_data = {'public_id': user.public_id, 'name': user.name, 'password': user.password, 'admin': user.admin}
 
     return jsonify({'user': user_data})
+
+# not complete this method
+# @app.route('/form', methods=['GET', 'POST'])
+# def form():
+#     form = LoginForm()
+#
+#     if form.validate_on_submit():
+#         return '<h1>The username is {}. The password is {}.'.format(form.username.data, form.password.data)
+#     return render_template('login.html', form=form)
