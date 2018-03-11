@@ -79,8 +79,8 @@ def get_one_user(current_user, public_id):
 
 # create user by admin
 @app.route('/user/create', methods=['POST'])
-# @token_required
-def create_user():
+@token_required
+def create_user(current_user):
     # start verifyuser admin or not
     verifyuser = User.query.filter_by(key=current_user).first()
     if not verifyuser.admin:
