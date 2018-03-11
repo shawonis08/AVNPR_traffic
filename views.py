@@ -87,7 +87,7 @@ def create_user():
 
 @app.route('/user/<public_id>', methods=['PUT'])
 @token_required
-def promote_user(public_id):
+def promote_user(current_user,public_id):
     # if not current_user.admin:
     #     return jsonify({'message': 'Cannot perform that function'})
 
@@ -113,7 +113,7 @@ def delete_user(current_user,public_id):
     return jsonify({'message': 'user has been deleted'})
 
 
-@app.route('/token')
+@app.route('/gettoken')
 def gen_token():
     auth = request.authorization
     if not auth or not auth.username or not auth.password:
