@@ -9,7 +9,7 @@ import datetime
 from functools import wraps
 from forms import LoginForm
 import os
-from flask_basicauth import BasicAuth
+# from flask_basicauth import BasicAuth
 
 
 # token required here
