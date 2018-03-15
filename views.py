@@ -1,5 +1,6 @@
+from werkzeug.utils import secure_filename
 from main import app, db
-from flask import render_template, request, jsonify, make_response
+from flask import render_template, request, jsonify, make_response, json
 from models import *
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -7,12 +8,16 @@ import jwt
 import datetime
 from functools import wraps
 from forms import LoginForm
+import os
+from flask_basicauth import BasicAuth
 
 
 # token required here
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        # auth = request.authorization
+        # return f(*args, **kwargs)
         token = None
 
         if 'x-access-token' in request.headers:
@@ -131,6 +136,9 @@ def delete_user(current_user, public_id):
     return jsonify({'message': 'user has been deleted'})
 
 
+basic_auth = BasicAuth(app)
+
+
 # generate_token here for specific user
 @app.route('/user/token', methods=['GET'])
 def gen_token():
@@ -163,6 +171,17 @@ def token(current_user):
 
     return jsonify({'user': user_data})
 
+
+@app.route('/user/logout', methods=['GET'])
+@token_required
+def logout(current_user):
+    user = User.query.filter_by(key=current_user).first()
+
+    user.key = None
+    db.session.commit()
+
+    return ''
+
 # not complete this method
 # @app.route('/form', methods=['GET', 'POST'])
 # def form():
@@ -171,3 +190,27 @@ def token(current_user):
 #     if form.validate_on_submit():
 #         return '<h1>The username is {}. The password is {}.'.format(form.username.data, form.password.data)
 #     return render_template('login.html', form=form)
+
+
+# file upload
+# @app.route('/user/upload', methods=['GET','POST'])
+# def upload():
+#     if request.method == 'POST':
+#         f = request.files['file']
+#         f.save(secure_filename(f.filename))
+#         return 'file uploaded successfully'
+# if request.method == 'POST':
+#     file = request.files['files']
+#     extension = os.path.splitext(file.filename)[1]
+#     f_name = str(uuid.uuid4()) + extension
+#     file.save(os.path.join(app.config['UPLOAD_FOLDER'], f_name))
+#     return json.dumps({'filename': f_name})
+################
+# @app.route('/user/upload', methods=['GET', 'POST'])
+# def upload():
+#     if request.method == 'POST':
+#         file = request.files['file']
+#         extension = os.path.splitext(file.filename)[1]
+#         f_name = str(uuid.uuid4()) + extension
+#         file.save(os.path.join(app.config['UPLOAD_FOLDER'], f_name))
+#         return json.dumps({'filename':f_name})
