@@ -136,9 +136,6 @@ def delete_user(current_user, public_id):
     return jsonify({'message': 'user has been deleted'})
 
 
-basic_auth = BasicAuth(app)
-
-
 # generate_token here for specific user
 @app.route('/user/token', methods=['GET'])
 def gen_token():
@@ -172,6 +169,20 @@ def token(current_user):
     return jsonify({'user': user_data})
 
 
+# app login
+@app.route('/user/login', methods=['GET'])
+@token_required
+def login(current_user):
+    user = User.query.filter_by(key=current_user).first()
+
+    if not user:
+        return jsonify({'message': 'no user found!'})
+    user_data = {'id': user.id, 'public_id': user.public_id, 'name': user.name, 'admin': user.admin}
+
+    return jsonify(user_data)
+
+
+# user logout
 @app.route('/user/logout', methods=['GET'])
 @token_required
 def logout(current_user):
