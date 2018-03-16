@@ -206,13 +206,18 @@ def logout(current_user):
 #     return render_template('login.html', form=form)
 
 
-# file upload
-# @app.route('/user/upload', methods=['GET','POST'])
-# def upload():
-#     if request.method == 'POST':
-#         f = request.files['file']
-#         f.save(secure_filename(f.filename))
-#         return 'file uploaded successfully'
+# file upload(key=file)
+@app.route('/user/upload', methods=['GET','POST'])
+@token_required
+def upload(current_user):
+    user = User.query.filter_by(key=current_user).first()
+    if not user:
+        return jsonify({'message':'no user found!'})
+    if request.method == 'POST':
+        f = request.files['file']
+        f.save(secure_filename(f.filename))
+        return 'file uploaded successfully'
+
 # if request.method == 'POST':
 #     file = request.files['files']
 #     extension = os.path.splitext(file.filename)[1]
