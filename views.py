@@ -213,11 +213,15 @@ def upload(current_user):
     user = User.query.filter_by(key=current_user).first()
     if not user:
         return jsonify({'message':'no user found!'})
-    if request.method == 'POST':
-        f = request.files['file']
-        f.save(secure_filename(f.filename))
-        return 'file uploaded successfully'
 
+    if not os.path.exists('UPLOAD_FOLDER'):
+        os.makedirs('UPLOAD_FOLDER')
+
+    if request.method == 'POST':
+        uploadfile = request.files['file']
+        uploadfile.save(os.path.join('UPLOAD_FOLDER', secure_filename(uploadfile.filename)))
+
+    return jsonify({'message':'upload complete!'})
 # if request.method == 'POST':
 #     file = request.files['files']
 #     extension = os.path.splitext(file.filename)[1]
