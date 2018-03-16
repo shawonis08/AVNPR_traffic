@@ -222,18 +222,3 @@ def upload(current_user):
         uploadfile.save(os.path.join('UPLOAD_FOLDER', secure_filename(uploadfile.filename)))
 
     return jsonify({'message':'upload complete!'})
-# if request.method == 'POST':
-#     file = request.files['files']
-#     extension = os.path.splitext(file.filename)[1]
-#     f_name = str(uuid.uuid4()) + extension
-#     file.save(os.path.join(app.config['UPLOAD_FOLDER'], f_name))
-#     return json.dumps({'filename': f_name})
-################
-# @app.route('/user/upload', methods=['GET', 'POST'])
-# def upload():
-#     if request.method == 'POST':
-#         file = request.files['file']
-#         extension = os.path.splitext(file.filename)[1]
-#         f_name = str(uuid.uuid4()) + extension
-#         file.save(os.path.join(app.config['UPLOAD_FOLDER'], f_name))
-#         return json.dumps({'filename':f_name})
