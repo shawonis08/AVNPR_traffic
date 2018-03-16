@@ -94,7 +94,7 @@ def create_user(current_user):
 
     data = request.get_json()
     hash_password = generate_password_hash(data['password'], method='sha256')
-    new_user = User(public_id=str(uuid.uuid4()), name=data['name'], password=hash_password, admin=False, key='None')
+    new_user = User(public_id=str(uuid.uuid4()), name=data['name'], password=hash_password, admin=False, key= None)
     db.session.add(new_user)
     db.session.commit()
     return jsonify({'message': 'new user create'})
@@ -182,16 +182,19 @@ def login(current_user):
     return jsonify(user_data)
 
 
-# user logout
+# app logout
 @app.route('/user/logout', methods=['GET'])
 @token_required
 def logout(current_user):
     user = User.query.filter_by(key=current_user).first()
 
+    if not user:
+        return jsonify({'message':'no user found!'})
+
     user.key = None
     db.session.commit()
 
-    return ''
+    return jsonify('logout successfully')
 
 # not complete this method
 # @app.route('/form', methods=['GET', 'POST'])
