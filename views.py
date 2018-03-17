@@ -1,14 +1,14 @@
-from werkzeug.utils import secure_filename
-from main import app, db
-from flask import render_template, request, jsonify, make_response, json
-from models import *
-import uuid
-from werkzeug.security import generate_password_hash, check_password_hash
-import jwt
-import datetime
-from functools import wraps
-from forms import LoginForm
 import os
+from werkzeug.utils import secure_filename
+from flask import request, jsonify, make_response
+import uuid
+from functools import wraps
+import jwt
+from werkzeug.security import generate_password_hash, check_password_hash
+from main import app, db
+from models import *
+
+
 # from flask_basicauth import BasicAuth
 
 
@@ -94,7 +94,7 @@ def create_user(current_user):
 
     data = request.get_json()
     hash_password = generate_password_hash(data['password'], method='sha256')
-    new_user = User(public_id=str(uuid.uuid4()), name=data['name'], password=hash_password, admin=False, key= None)
+    new_user = User(public_id=str(uuid.uuid4()), name=data['name'], password=hash_password, admin=False, key=None)
     db.session.add(new_user)
     db.session.commit()
     return jsonify({'message': 'new user create'})
@@ -189,12 +189,13 @@ def logout(current_user):
     user = User.query.filter_by(key=current_user).first()
 
     if not user:
-        return jsonify({'message':'no user found!'})
+        return jsonify({'message': 'no user found!'})
 
     user.key = None
     db.session.commit()
 
-    return jsonify('logout successfully')
+    return jsonify({'message': 'logout successfully'})
+
 
 # not complete this method
 # @app.route('/form', methods=['GET', 'POST'])
@@ -207,12 +208,12 @@ def logout(current_user):
 
 
 # file upload(key=file)
-@app.route('/user/upload', methods=['GET','POST'])
+@app.route('/user/upload', methods=['GET', 'POST'])
 @token_required
 def upload(current_user):
     user = User.query.filter_by(key=current_user).first()
     if not user:
-        return jsonify({'message':'no user found!'})
+        return jsonify({'message': 'no user found!'})
 
     if not os.path.exists('UPLOAD_FOLDER'):
         os.makedirs('UPLOAD_FOLDER')
@@ -221,4 +222,13 @@ def upload(current_user):
         uploadfile = request.files['file']
         uploadfile.save(os.path.join('UPLOAD_FOLDER', secure_filename(uploadfile.filename)))
 
-    return jsonify({'message':'upload complete!'})
+    return jsonify({'message': 'upload completed!'})
+
+
+# file upload through byte io
+@app.route('/user/up', methods=['POST'])
+def up():
+    if request.method == 'POST':
+        return 'ok'
+
+    return jsonify({'message': 'test with byete'})

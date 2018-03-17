@@ -1,5 +1,4 @@
 from main import db
-from views import *
 
 
 class User(db.Model):
@@ -11,14 +10,11 @@ class User(db.Model):
     key = db.Column(db.String(300))
 
 
-
-
-# class Server(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     statusvalue = db.Column(db.Integer)
+class File(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
 
 # ***for create database follow the instruction
 # from main import db
-from models import *
 # db.create_all()
