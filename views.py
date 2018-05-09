@@ -168,7 +168,6 @@ def token(current_user):
 
     return jsonify({'user': user_data})
 
-
 # app login
 @app.route('/user/login', methods=['GET'])
 @token_required
@@ -230,5 +229,4 @@ def upload(current_user):
 def up():
     if request.method == 'POST':
         return 'ok'
-
     return jsonify({'message': 'test with byete'})
